@@ -12,8 +12,9 @@ import { daysUntil, toSafeDate } from '../utils/dateHelpers.js'
 import toast from 'react-hot-toast'
 
 const SORTS = [
+  { value: 'addedAsc', label: 'Oldest added' },
+  { value: 'addedDesc', label: 'Newest added' },
   { value: 'nextRevision', label: 'Next revision date' },
-  { value: 'added', label: 'Date added' },
   { value: 'difficulty', label: 'Difficulty' },
 ]
 
@@ -27,7 +28,7 @@ export default function AllProblems() {
   const [difficulty, setDifficulty] = useState('all')
   const [tag, setTag] = useState('all')
   const [status, setStatus] = useState('all')
-  const [sort, setSort] = useState('nextRevision')
+  const [sort, setSort] = useState('addedAsc')
   const [activeProblem, setActiveProblem] = useState(null)
 
   const filtered = useMemo(() => {
@@ -40,8 +41,9 @@ export default function AllProblems() {
     if (status === 'mastered') list = list.filter((p) => (p.revisionStage ?? 0) >= 4)
 
     const cmp = {
+      addedAsc: (a, b) => (toSafeDate(a.addedAt) ?? 0) - (toSafeDate(b.addedAt) ?? 0),
+      addedDesc: (a, b) => (toSafeDate(b.addedAt) ?? 0) - (toSafeDate(a.addedAt) ?? 0),
       nextRevision: (a, b) => new Date(a.nextRevisionDate ?? 0) - new Date(b.nextRevisionDate ?? 0),
-      added: (a, b) => new Date(b.addedAt) - new Date(a.addedAt),
       difficulty: (a, b) => DIFF_ORDER[a.difficulty] - DIFF_ORDER[b.difficulty],
     }[sort]
     return list.sort(cmp)

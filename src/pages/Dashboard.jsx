@@ -10,7 +10,7 @@ import ConfidenceModal from '../components/ConfidenceModal.jsx'
 import StatsBar from '../components/StatsBar.jsx'
 import WeeklyChart from '../components/WeeklyChart.jsx'
 import UndoBanner from '../components/UndoBanner.jsx'
-import { daysUntil, startOfDay, isToday } from '../utils/dateHelpers.js'
+import { daysUntil, startOfDay, isToday, toSafeDate } from '../utils/dateHelpers.js'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -33,7 +33,7 @@ export default function Dashboard() {
         const d = daysUntil(p.nextRevisionDate)
         return d >= 1 && d <= 7
       })
-      .sort((a, b) => new Date(a.nextRevisionDate) - new Date(b.nextRevisionDate))
+      .sort((a, b) => (toSafeDate(a.addedAt) ?? 0) - (toSafeDate(b.addedAt) ?? 0))
   }, [problems])
 
   const weekendBatch = useMemo(
