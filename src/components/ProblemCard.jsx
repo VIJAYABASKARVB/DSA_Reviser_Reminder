@@ -2,6 +2,10 @@ import { PlatformBadge, DifficultyBadge, StagePill, TagPill } from './Badges.jsx
 import { format } from 'date-fns'
 
 export default function ProblemCard({ problem, showStage = true, showDue = true, onRevise }) {
+  console.log('🃏 ProblemCard props:', problem)
+  console.log('📅 nextRevisionDate raw value:', problem.nextRevisionDate, '| type:', typeof problem.nextRevisionDate)
+  console.log('📅 lastRevisedAt raw value:', problem.lastRevisedAt, '| type:', typeof problem.lastRevisedAt)
+  console.log('📅 addedAt raw value:', problem.addedAt, '| type:', typeof problem.addedAt)
   const isDue = problem.nextRevisionDate && new Date(problem.nextRevisionDate) <= new Date()
   const isMastered = (problem.revisionStage ?? 0) >= 4
 

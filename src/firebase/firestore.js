@@ -32,6 +32,7 @@ export function subscribeProblems(uid, onData, onError) {
   }
   const q = query(userProblemsCollection(uid))
   return onSnapshot(q, (snap) => {
+    for (const d of snap.docs) console.log('🔥 Raw Firestore doc:', d.id, d.data())
     onData(snap.docs.map((d) => ({ id: d.id, ...convertDates(d.data()) })))
   }, onError)
 }

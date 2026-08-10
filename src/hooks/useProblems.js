@@ -9,6 +9,7 @@ export function useProblems(uid) {
   useEffect(() => {
     if (!uid) return undefined
     const unsub = subscribeProblems(uid, (list) => {
+      console.log('🔥 useProblems received list:', list)
       setProblems(list)
       setLoading(false)
     }, (err) => {

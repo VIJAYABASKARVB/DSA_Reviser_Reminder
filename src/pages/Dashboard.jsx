@@ -12,27 +12,33 @@ import WeeklyChart from '../components/WeeklyChart.jsx'
 import { daysUntil, startOfDay, isToday } from '../utils/dateHelpers.js'
 
 export default function Dashboard() {
+  console.log('📊 Dashboard rendering...')
   const { user } = useAuth()
   const { problems, loading, error } = useProblems(user?.uid)
   const { meta } = useStreak(user?.uid)
   const [activeProblem, setActiveProblem] = useState(null)
+  console.log('🔍 Dashboard data — problems:', problems, 'meta:', meta)
 
   const dueToday = useMemo(() => {
     const today = startOfDay(new Date())
-    return problems
+    const result = problems
       .filter((p) => p.nextRevisionDate && new Date(p.nextRevisionDate) <= today && (p.revisionStage ?? 0) < 4)
       .sort((a, b) => new Date(a.nextRevisionDate) - new Date(b.nextRevisionDate))
+    console.log('🔍 DueToday computed:', result.map((p) => ({ title: p.title, nextRevisionDate: p.nextRevisionDate })))
+    return result
   }, [problems])
 
   const upcoming = useMemo(() => {
     const today = startOfDay(new Date())
-    return problems
+    const result = problems
       .filter((p) => {
         if (!p.nextRevisionDate || (p.revisionStage ?? 0) >= 4) return false
         const d = daysUntil(p.nextRevisionDate)
         return d >= 1 && d <= 7
       })
       .sort((a, b) => new Date(a.nextRevisionDate) - new Date(b.nextRevisionDate))
+    console.log('🔍 Upcoming computed:', result.map((p) => ({ title: p.title, nextRevisionDate: p.nextRevisionDate })))
+    return result
   }, [problems])
 
   const weekendBatch = useMemo(
@@ -88,6 +94,7 @@ export default function Dashboard() {
             Due Today <span className="ml-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-sm font-semibold text-amber-400">{dueToday.length}</span>
           </h2>
         </div>
+        {console.log('🔍 [DueToday] rendering', dueToday)}
         {dueToday.length === 0 ? (
           <p className="rounded-xl border border-gray-800 bg-surface-900 p-4 text-sm text-gray-400">
             Nothing due today. Add a problem or enjoy the free time. 🎉
@@ -106,6 +113,7 @@ export default function Dashboard() {
           <h2 className="text-xl font-bold text-white">Upcoming Revisions</h2>
           <span className="text-sm text-gray-500">Next 7 days</span>
         </div>
+        {console.log('🔍 [Upcoming] rendering', upcoming)}
         {upcoming.length === 0 ? (
           <p className="rounded-xl border border-gray-800 bg-surface-900 p-4 text-sm text-gray-400">Nothing scheduled in the next week.</p>
         ) : (
@@ -122,6 +130,7 @@ export default function Dashboard() {
           <h2 className="text-xl font-bold text-white">Weekend Revision</h2>
           <span className="text-sm text-gray-500">{weekendBatch.length} {weekendBatch.length === 1 ? 'problem' : 'problems'} to revise this weekend</span>
         </div>
+        {console.log('🔍 [WeekendRevision] rendering', weekendBatch)}
         {weekendBatch.length === 0 ? (
           <p className="rounded-xl border border-gray-800 bg-surface-900 p-4 text-sm text-gray-400">
             Problems you revise on weekdays queue up here for a weekend deep-dive.
@@ -140,6 +149,7 @@ export default function Dashboard() {
           <h2 className="text-xl font-bold text-white">All Problems</h2>
           <Link to="/problems" className="text-sm text-indigo-400 transition hover:text-indigo-300">View all →</Link>
         </div>
+        {console.log('🔍 [RecentProblems] rendering', recentProblems)}
         <div className="space-y-2">
           {recentProblems.map((p) => (
             <ProblemCard key={p.id} problem={p} onRevise={() => setActiveProblem(p)} />

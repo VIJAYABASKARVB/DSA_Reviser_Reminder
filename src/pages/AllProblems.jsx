@@ -19,6 +19,7 @@ const SORTS = [
 const DIFF_ORDER = { easy: 0, medium: 1, hard: 2 }
 
 export default function AllProblems() {
+  console.log('📋 AllProblems rendering...')
   const { user } = useAuth()
   const { problems, loading, error } = useProblems(user?.uid)
   const { meta } = useStreak(user?.uid)

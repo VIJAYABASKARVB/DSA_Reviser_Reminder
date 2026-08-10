@@ -26,6 +26,7 @@ export default function WeeklyChart({ problems }) {
       return Math.floor((end.getTime() - start.getTime()) / 86400000)
     }
     for (const p of problems) {
+      console.log('📈 WeeklyChart problem:', p.id, 'confidenceHistory:', p.confidenceHistory)
       for (const c of p.confidenceHistory || []) {
         const idx = dayIndex(c.date)
         if (idx >= 0 && idx < 7) days[idx].count += 1
