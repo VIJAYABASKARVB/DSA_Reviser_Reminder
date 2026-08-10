@@ -12,18 +12,35 @@ import WeeklyChart from '../components/WeeklyChart.jsx'
 import UndoBanner from '../components/UndoBanner.jsx'
 import { daysUntil, startOfDay, isToday, toSafeDate } from '../utils/dateHelpers.js'
 
+const SORTS = [
+  { value: 'addedAsc', label: 'Oldest added' },
+  { value: 'addedDesc', label: 'Newest added' },
+  { value: 'nextRevision', label: 'Next revision date' },
+  { value: 'difficulty', label: 'Difficulty' },
+]
+
+const DIFF_ORDER = { easy: 0, medium: 1, hard: 2 }
+
 export default function Dashboard() {
   const { user } = useAuth()
   const { problems, loading, error } = useProblems(user?.uid)
   const { meta } = useStreak(user?.uid)
   const [activeProblem, setActiveProblem] = useState(null)
+  const [sort, setSort] = useState('addedAsc')
+
+  const sortCmp = {
+    addedAsc: (a, b) => (toSafeDate(a.addedAt) ?? 0) - (toSafeDate(b.addedAt) ?? 0),
+    addedDesc: (a, b) => (toSafeDate(b.addedAt) ?? 0) - (toSafeDate(a.addedAt) ?? 0),
+    nextRevision: (a, b) => new Date(a.nextRevisionDate ?? 0) - new Date(b.nextRevisionDate ?? 0),
+    difficulty: (a, b) => DIFF_ORDER[a.difficulty] - DIFF_ORDER[b.difficulty],
+  }[sort]
 
   const dueToday = useMemo(() => {
     const today = startOfDay(new Date())
     return problems
       .filter((p) => p.nextRevisionDate && new Date(p.nextRevisionDate) <= today && (p.revisionStage ?? 0) < 4)
-      .sort((a, b) => new Date(a.nextRevisionDate) - new Date(b.nextRevisionDate))
-  }, [problems])
+      .sort(sortCmp)
+  }, [problems, sort])
 
   const upcoming = useMemo(() => {
     const today = startOfDay(new Date())
@@ -33,17 +50,17 @@ export default function Dashboard() {
         const d = daysUntil(p.nextRevisionDate)
         return d >= 1 && d <= 7
       })
-      .sort((a, b) => (toSafeDate(a.addedAt) ?? 0) - (toSafeDate(b.addedAt) ?? 0))
-  }, [problems])
+      .sort(sortCmp)
+  }, [problems, sort])
 
   const weekendBatch = useMemo(
-    () => problems.filter((p) => p.isWeekend && (p.revisionStage ?? 0) < 4),
-    [problems],
+    () => problems.filter((p) => p.isWeekend && (p.revisionStage ?? 0) < 4).sort(sortCmp),
+    [problems, sort],
   )
 
   const recentProblems = useMemo(
-    () => [...problems].sort((a, b) => new Date(b.nextRevisionDate ?? 0) - new Date(a.nextRevisionDate ?? 0)).slice(0, 5),
-    [problems],
+    () => [...problems].sort(sortCmp).slice(0, 5),
+    [problems, sort],
   )
 
   const revisedToday = useMemo(
@@ -94,6 +111,15 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <UndoBanner meta={meta} />
+      <div className="flex justify-end">
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="rounded-xl border border-gray-700 bg-surface-800 px-3 py-2 text-sm text-gray-200 outline-none focus:border-indigo-500"
+        >
+          {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+      </div>
       <StatsBar streak={meta?.streak || 0} total={problems.length} revisedToday={revisedToday} mastered={masteredCount} />
       <WeeklyChart problems={problems} />
 
