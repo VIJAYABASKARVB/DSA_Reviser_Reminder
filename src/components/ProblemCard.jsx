@@ -1,12 +1,10 @@
 import { PlatformBadge, DifficultyBadge, StagePill, TagPill } from './Badges.jsx'
 import { format } from 'date-fns'
+import { toSafeDate } from '../utils/dateHelpers.js'
 
 export default function ProblemCard({ problem, showStage = true, showDue = true, onRevise }) {
-  console.log('🃏 ProblemCard props:', problem)
-  console.log('📅 nextRevisionDate raw value:', problem.nextRevisionDate, '| type:', typeof problem.nextRevisionDate)
-  console.log('📅 lastRevisedAt raw value:', problem.lastRevisedAt, '| type:', typeof problem.lastRevisedAt)
-  console.log('📅 addedAt raw value:', problem.addedAt, '| type:', typeof problem.addedAt)
-  const isDue = problem.nextRevisionDate && new Date(problem.nextRevisionDate) <= new Date()
+  const nextRevisionDate = toSafeDate(problem.nextRevisionDate)
+  const isDue = nextRevisionDate && nextRevisionDate <= new Date()
   const isMastered = (problem.revisionStage ?? 0) >= 4
 
   return (
@@ -32,9 +30,9 @@ export default function ProblemCard({ problem, showStage = true, showDue = true,
       </div>
       <div className="flex shrink-0 items-center gap-3">
         {showStage && <StagePill stage={problem.revisionStage} />}
-        {showDue && !isMastered && problem.nextRevisionDate && (
+        {showDue && !isMastered && nextRevisionDate && (
           <span className={`text-xs ${isDue ? 'font-semibold text-amber-400' : 'text-gray-500'}`}>
-            Due {format(new Date(problem.nextRevisionDate), 'MMM d')}
+            Due {format(nextRevisionDate, 'MMM d')}
           </span>
         )}
         {onRevise && !isMastered && (

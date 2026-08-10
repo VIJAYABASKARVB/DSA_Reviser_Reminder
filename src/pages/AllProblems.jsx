@@ -7,7 +7,7 @@ import { markRevised } from '../firebase/firestore.js'
 import ConfidenceModal from '../components/ConfidenceModal.jsx'
 import { PlatformBadge, DifficultyBadge, StagePill, TagPill } from '../components/Badges.jsx'
 import { TAGS, DIFFICULTIES, STATUS_OPTIONS } from '../constants.js'
-import { daysUntil } from '../utils/dateHelpers.js'
+import { daysUntil, toSafeDate } from '../utils/dateHelpers.js'
 import toast from 'react-hot-toast'
 
 const SORTS = [
@@ -19,7 +19,6 @@ const SORTS = [
 const DIFF_ORDER = { easy: 0, medium: 1, hard: 2 }
 
 export default function AllProblems() {
-  console.log('📋 AllProblems rendering...')
   const { user } = useAuth()
   const { problems, loading, error } = useProblems(user?.uid)
   const { meta } = useStreak(user?.uid)
@@ -111,7 +110,8 @@ export default function AllProblems() {
               </thead>
               <tbody className="divide-y divide-gray-800 bg-surface-900">
                 {filtered.map((p) => {
-                  const isDue = p.nextRevisionDate && new Date(p.nextRevisionDate) <= new Date()
+                  const nextRevisionDate = toSafeDate(p.nextRevisionDate)
+                  const isDue = nextRevisionDate && nextRevisionDate <= new Date()
                   const mastered = (p.revisionStage ?? 0) >= 4
                   return (
                     <tr key={p.id} className="transition hover:bg-surface-800/60">
@@ -124,7 +124,7 @@ export default function AllProblems() {
                       <td className="px-4 py-3"><StagePill stage={p.revisionStage} /></td>
                       <td className="px-4 py-3">
                         {mastered ? <span className="text-xs text-emerald-400">—</span> : (
-                          `${format(new Date(p.nextRevisionDate), 'MMM d')} ${isDue ? '· due' : p.nextRevisionDate ? `· ${daysUntil(p.nextRevisionDate)}d` : ''}`
+                          `${nextRevisionDate ? format(nextRevisionDate, 'MMM d') : 'N/A'} ${isDue ? '· due' : nextRevisionDate ? `· ${daysUntil(nextRevisionDate)}d` : ''}`
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -158,7 +158,7 @@ export default function AllProblems() {
                   {!((p.revisionStage ?? 0) >= 4) && (
                     <button
                       onClick={() => setActiveProblem(p)}
-                      className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${new Date(p.nextRevisionDate) <= new Date() ? 'bg-amber-500/15 text-amber-400' : 'border border-gray-700 text-gray-300'}`}
+                      className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${toSafeDate(p.nextRevisionDate) && toSafeDate(p.nextRevisionDate) <= new Date() ? 'bg-amber-500/15 text-amber-400' : 'border border-gray-700 text-gray-300'}`}
                     >
                       Revise
                     </button>

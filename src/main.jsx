@@ -5,31 +5,20 @@ import { Toaster } from 'react-hot-toast'
 import App from './App.jsx'
 import './index.css'
 
-class ErrorBoundary extends React.Component {
-  componentDidCatch(error, info) {
-    console.error('💥 ErrorBoundary caught:', error, info?.componentStack)
-  }
-  render() {
-    return this.props.children
-  }
-}
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <BrowserRouter>
-        <App />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: '#1f2937',
-              color: '#f9fafb',
-              border: '1px solid #374151',
-            },
-          }}
-        />
-      </BrowserRouter>
-    </ErrorBoundary>
+    <BrowserRouter>
+      <App />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#1f2937',
+            color: '#f9fafb',
+            border: '1px solid #374151',
+          },
+        }}
+      />
+    </BrowserRouter>
   </React.StrictMode>,
 )

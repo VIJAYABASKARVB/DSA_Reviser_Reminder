@@ -8,7 +8,6 @@ function Stat({ label, value, accent }) {
 }
 
 export default function StatsBar({ streak, total, revisedToday, mastered }) {
-  console.log('📊 StatsBar rendering:', { streak, total, revisedToday, mastered })
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Stat label="Day streak" value={`${streak}🔥`} accent="text-orange-400" />

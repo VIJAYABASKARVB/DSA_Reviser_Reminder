@@ -11,8 +11,14 @@ export function isWeekend(d = new Date()) {
 
 export function daysUntil(date) {
   const a = startOfDay(new Date())
-  const b = startOfDay(new Date(date))
+  const b = startOfDay(toSafeDate(date) ?? new Date())
   return Math.round((b - a) / 86400000)
+}
+
+export function toSafeDate(value) {
+  if (value == null) return null
+  const date = value?.toDate ? value.toDate() : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
 export function isYesterday(d) {
