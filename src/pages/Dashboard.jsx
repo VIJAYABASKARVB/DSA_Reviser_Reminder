@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { useProblems } from '../hooks/useProblems.js'
 import { useStreak } from '../hooks/useStreak.js'
-import { markRevised } from '../firebase/firestore.js'
+import { markRevised, undoRevision } from '../firebase/firestore.js'
 import ProblemCard from '../components/ProblemCard.jsx'
 import ConfidenceModal from '../components/ConfidenceModal.jsx'
 import StatsBar from '../components/StatsBar.jsx'
 import WeeklyChart from '../components/WeeklyChart.jsx'
+import UndoBanner from '../components/UndoBanner.jsx'
 import { daysUntil, startOfDay, isToday } from '../utils/dateHelpers.js'
 
 export default function Dashboard() {
@@ -59,7 +60,20 @@ export default function Dashboard() {
     setActiveProblem(null)
     try {
       await markRevised(user.uid, problem.id, problem, rating, meta)
-      toast.success(problem.title + (rating === 'hard' ? ' — repeat interval' : ' — stage advanced'))
+      toast.success('Revision recorded', {
+        duration: 10000,
+        action: {
+          label: '↩ Undo',
+          onClick: async () => {
+            try {
+              await undoRevision(user.uid, problem.id)
+              toast.success('Revision undone')
+            } catch (err) {
+              toast.error(err.message)
+            }
+          },
+        },
+      })
     } catch (err) {
       console.error(err)
       toast.error('Failed to record revision')
@@ -79,6 +93,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      <UndoBanner meta={meta} />
       <StatsBar streak={meta?.streak || 0} total={problems.length} revisedToday={revisedToday} mastered={masteredCount} />
       <WeeklyChart problems={problems} />
 

@@ -1,4 +1,4 @@
-import { getFirestore, collection, doc, query, onSnapshot, writeBatch, arrayUnion, setDoc, Timestamp } from 'firebase/firestore'
+import { getFirestore, collection, doc, query, onSnapshot, writeBatch, arrayUnion, setDoc, runTransaction, deleteField, Timestamp } from 'firebase/firestore'
 import { app, firebaseReady } from './config.js'
 import { TAGS } from '../constants.js'
 import { addDays, startOfDay, isWeekend, isYesterday, isToday } from '../utils/dateHelpers.js'
@@ -80,6 +80,16 @@ export async function markRevised(uid, problemId, problem, rating, meta) {
     lastRevisedAt: now,
     confidenceHistory: arrayUnion({ date: now, rating }),
     isWeekend: isWeekend(now) ? false : true,
+    _undo: {
+      revisionStage: problem.revisionStage ?? 0,
+      nextRevisionDate: problem.nextRevisionDate ?? null,
+      lastRevisedAt: problem.lastRevisedAt ?? null,
+      isWeekend: problem.isWeekend ?? false,
+      confidenceHistory: problem.confidenceHistory ?? [],
+      revisionCount: (problem.confidenceHistory ?? []).length,
+      metaStreak: meta?.streak ?? 0,
+      metaLastRevisionDate: meta?.lastRevisionDate ?? null,
+    },
   }
   const stage = problem.revisionStage ?? 0
   if (rating !== 'hard') {
@@ -94,10 +104,43 @@ export async function markRevised(uid, problemId, problem, rating, meta) {
     streak: streak.value,
     lastRevisionDate: now,
     customTags: (meta && meta.customTags) || [],
+    lastRevision: { problemId, title: problem.title, at: now },
   }, { merge: true })
 
   await batch.commit()
   return streak.value
+}
+
+export async function undoRevision(uid, problemId) {
+  return runTransaction(db, async (tx) => {
+    const ref = doc(userProblemsCollection(uid), problemId)
+    const metaRef = userMetaDoc(uid)
+    const [problemSnap, metaSnap] = await Promise.all([tx.get(ref), tx.get(metaRef)])
+    if (!problemSnap.exists()) throw new Error('Problem not found')
+    const data = convertDates(problemSnap.data())
+    const undo = data._undo
+    if (!undo) throw new Error('Nothing to undo')
+    if ((data.confidenceHistory ?? []).length !== undo.revisionCount) {
+      throw new Error('A newer revision exists — nothing to undo')
+    }
+
+    tx.update(ref, {
+      revisionStage: undo.revisionStage,
+      nextRevisionDate: undo.nextRevisionDate,
+      lastRevisedAt: undo.lastRevisedAt,
+      isWeekend: undo.isWeekend,
+      confidenceHistory: undo.confidenceHistory,
+      _undo: deleteField(),
+    })
+
+    if (metaSnap.exists()) {
+      tx.update(metaRef, {
+        streak: undo.metaStreak,
+        lastRevisionDate: undo.metaLastRevisionDate,
+        lastRevision: deleteField(),
+      })
+    }
+  })
 }
 
 function computeStreak(meta, now) {

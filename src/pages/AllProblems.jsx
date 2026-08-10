@@ -3,8 +3,9 @@ import { format } from 'date-fns'
 import { useAuth } from '../hooks/useAuth.js'
 import { useProblems } from '../hooks/useProblems.js'
 import { useStreak } from '../hooks/useStreak.js'
-import { markRevised } from '../firebase/firestore.js'
+import { markRevised, undoRevision } from '../firebase/firestore.js'
 import ConfidenceModal from '../components/ConfidenceModal.jsx'
+import UndoBanner from '../components/UndoBanner.jsx'
 import { PlatformBadge, DifficultyBadge, StagePill, TagPill } from '../components/Badges.jsx'
 import { TAGS, DIFFICULTIES, STATUS_OPTIONS } from '../constants.js'
 import { daysUntil, toSafeDate } from '../utils/dateHelpers.js'
@@ -50,7 +51,20 @@ export default function AllProblems() {
     setActiveProblem(null)
     try {
       await markRevised(user.uid, problem.id, problem, rating, meta)
-      toast.success('Revision recorded')
+      toast.success('Revision recorded', {
+        duration: 10000,
+        action: {
+          label: '↩ Undo',
+          onClick: async () => {
+            try {
+              await undoRevision(user.uid, problem.id)
+              toast.success('Revision undone')
+            } catch (err) {
+              toast.error(err.message)
+            }
+          },
+        },
+      })
     } catch (err) {
       console.error(err)
       toast.error('Failed to record revision')
@@ -61,6 +75,7 @@ export default function AllProblems() {
 
   return (
     <div className="space-y-4">
+      <UndoBanner meta={meta} />
       <h1 className="text-2xl font-bold text-white">All Problems <span className="text-base font-normal text-gray-500">({filtered.length})</span></h1>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
